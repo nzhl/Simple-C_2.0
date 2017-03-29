@@ -1,12 +1,13 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 #include "../word/Word.h"
 
 
 // ------------ Error reporting  part ------------------------
 
-static const char* FilePath = "/Users/zhangzhimin/test.c";
+const static char* FilePath = "/Users/zhangzhimin/test.c";
 
 int current_line;
 
@@ -49,5 +50,5 @@ void return_current_char(){ ungetc(ch, fp); }
 
 // ------------ Parser helper part  ---------------------------
 
-Word word;
-
+PWord pWord;
+std::vector<std::string> codes;

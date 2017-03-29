@@ -1,10 +1,10 @@
-#include "io.h"
+#include "../io/io.h"
 #include "../word/Word.h"
 
 #include <iostream>
 
 extern int current_line;
-extern Word word;
+extern PWord pWord;
 extern int ch;
 
 static const char SpaceCharList[] = " \n\t\r";
@@ -23,32 +23,32 @@ void get_next_token(){
     } else if(isdigit(ch)){
         parse_number();
     } else if(ch == '+'){
-        word = Word(TK_PLUS, "+");
+        pWord = Word::GetWord(PLUS, "+");
         get_next_char();
     } else if(ch == '-'){
-        word = Word(TK_MINUS, "-");
+        pWord = Word::GetWord(MINUS, "-");
         get_next_char();
     } else if(ch == '*'){
-        word = Word(TK_STAR, "*");
+        pWord = Word::GetWord(STAR, "*");
         get_next_char();
     } else if(ch == '/'){
-        word = Word(TK_DIVIDE, "/");
+        pWord = Word::GetWord(DIVIDE, "/");
         get_next_char();
     } else if(ch == '%'){
-        word = Word(TK_MOD, "/");
+        pWord = Word::GetWord(MOD, "/");
         get_next_char();
     } else if(ch == '='){
         get_next_char();
         if(ch == '='){
-            word = Word(TK_EQ, "==");
+            pWord = Word::GetWord(EQ, "==");
             get_next_char();
         } else{
-            word = Word(TK_ASSIGN, "=");
+            pWord = Word::GetWord(ASSIGN, "=");
         }
     } else if(ch == '!'){
         get_next_char();
         if(ch == '='){
-            word = Word(TK_NEQ, "!=");
+            pWord = Word::GetWord(NEQ, "!=");
             get_next_char();
         } else{
             error("Do not support `!` yet !");
@@ -56,47 +56,47 @@ void get_next_token(){
     } else if(ch == '<'){
         get_next_char();
         if(ch == '='){
-            word = Word(TK_LEQ, "<=");
+            pWord = Word::GetWord(LEQ, "<=");
             get_next_char();
         } else {
-            word = Word(TK_LT, "<");
+            pWord = Word::GetWord(LT, "<");
         }
     } else if(ch == '>'){
         get_next_char();
         if(ch == '='){
-            word = Word(TK_GEQ, ">=");
+            pWord = Word::GetWord(GEQ, ">=");
             get_next_char();
         } else {
-            word = Word(TK_GT, ">");
+            pWord = Word::GetWord(GT, ">");
         }
     } else if(ch == ';'){
-        word = Word(TK_SEMICOLON, ";");
+        pWord = Word::GetWord(SEMICOLON, ";");
         get_next_char();
     } else if(ch == '('){
-        word = Word(TK_LPA, "(");
+        pWord = Word::GetWord(LPA, "(");
         get_next_char();
     } else if(ch == ')'){
-        word = Word(TK_RPA, ")");
+        pWord = Word::GetWord(RPA, ")");
         get_next_char();
     } else if(ch == '['){
-        word = Word(TK_LSB, "[");
+        pWord = Word::GetWord(LSB, "[");
         get_next_char();
     } else if(ch == ']'){
-        word = Word(TK_RSB, "]");
+        pWord = Word::GetWord(RSB, "]");
         get_next_char();
     } else if(ch == '{'){
-        word = Word(TK_BEGIN, "{");
+        pWord = Word::GetWord(BEGIN, "{");
         get_next_char();
     } else if(ch == '}') {
-        word = Word(TK_END, "}");
+        pWord = Word::GetWord(END, "}");
         get_next_char();
     } else if(ch == ',') {
-        word = Word(TK_COMMA, ",");
+        pWord = Word::GetWord(COMMA, ",");
         get_next_char();
     } else if(ch == '\"') {
         parse_string();
     } else if(ch == EOF) {
-        word = Word(TK_EOF, "EOF");
+        pWord = Word::GetWord(TK_EOF, "EOF");
     } else{
         error("Unknown character : %c !", ch);
     }
@@ -109,8 +109,8 @@ void init(){
 
 void lexDebug(){
     init();
-    while (word.token != TK_EOF){
-        std::cout << word.rawStr << std::endl;
+    while (pWord->token != TK_EOF){
+        std::cout << pWord->rawStr << std::endl;
         get_next_token();
     }
 }
@@ -181,7 +181,7 @@ void parse_identifier(){
             break;
         }
     } while (true);
-    word = Word(ID, string);
+    pWord = Word::GetWord(ID, string);
 }
 
 void parse_number(){
@@ -210,7 +210,7 @@ void parse_number(){
         } while (true);
     }
 
-    word = Word(LT_NUMBER, string);
+    pWord = Word::GetWord(NUMBER, string);
 }
 
 void parse_string(){
@@ -251,6 +251,6 @@ void parse_string(){
         }
     } while (true);
 
-    word = Word(LT_STR, string);
+    pWord = Word::GetWord(STR, string);
 }
 

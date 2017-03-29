@@ -1,11 +1,16 @@
 #include "Word.h"
 
-const std::map<std::string, int> Word::preservedTable = {
-        {std::string("int"), TK_INT},
-        {std::string("void"), TK_VOID},
-        {std::string("if"), TK_IF},
-        {std::string("else"), TK_ELSE},
-        {std::string("continue"), TK_CONTINUE},
-        {std::string("break"), TK_BREAK},
-        {std::string("return"), TK_RETURN},
+std::map<std::string, Word> Word::table = {
+        {std::string("int"), Word(INT, "int")},
+        {std::string("char"), Word(CHAR, "char")},
+        {std::string("void"), Word(VOID, "void")},
+        {std::string("if"), Word(IF, "if")},
+        {std::string("else"), Word(ELSE, "else")},
+        {std::string("while"), Word(WHILE, "while")},
+        {std::string("continue"), Word(CONTINUE, "continue")},
+        {std::string("break"), Word(BREAK, "break")},
+        {std::string("return"), Word(RETURN, "return")},
 };
+
+Word Word::temp;
+

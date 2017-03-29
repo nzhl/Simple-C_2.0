@@ -6,12 +6,12 @@ set(CMAKE_CXX_STANDARD 11)
 set(SOURCE_FILES
         lex/lexer.cpp
         lex/lexer.h
-#        parse/parser.cpp
-#        parse/parser.h
+        parse/parser.cpp
+        parse/parser.h
         main.cpp
         word/Word.h
         word/Word.cpp
 #        vm.h vm.cpp
-        lex/io.cpp lex/io.h)
+        io/io.cpp io/io.h)
 
 add_executable(Language_2 ${SOURCE_FILES})

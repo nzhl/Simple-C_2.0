@@ -8,6 +8,106 @@ Currently it's actually not that like a powerful language, it just a minor C whi
 
 1. You can only define all your variable at the front of the function body.
 2. It do not support global variable.
+3. Support if/else, while, return statement.
+4. Support function call now, embedded printf in a tricky way.
+
+Here is an example that basically cover all the language feature now.
+
+```c
+int main(){
+    int x, y;
+
+    x = y = 1;
+    if(x) {
+        while(x < 11){
+            x = x + 1;
+            y = y * 2;
+            printf("current x value = %d\n", x);
+            printf("current y value = %d\n", y);
+            printf("%s", "\n\n");
+        }
+    }
+    else{
+        printf("can not reach here : %d\n", x);
+    }
+}
+```
+`gcc -m32 test.s && ./a.out`
+
+```
+$ ./a.out
+current x value = 2
+current y value = 2
+
+
+current x value = 3
+current y value = 4
+
+
+current x value = 4
+current y value = 8
+
+
+current x value = 5
+current y value = 16
+
+
+current x value = 6
+current y value = 32
+
+
+current x value = 7
+current y value = 64
+
+
+current x value = 8
+current y value = 128
+
+
+current x value = 9
+current y value = 256
+
+
+current x value = 10
+current y value = 512
+
+
+current x value = 11
+current y value = 1024
+
+```
+
+
+
+
+### Have A Taste 
+
+1. install cmake and make.
+2. do some change :
+    + input_file_path in `io.cpp` line 10 
+    + output_file_path in `parser.cpp` in line 72.
+3. cmake CMakeLists.txt && make
+4. ./Simple-C_2.0 
+5. gcc -m32 test.s && ./a.out 
+
+### Function Implemented  
+
+---------------28 /  3 / 2017-------------------
+
+- [x] lexer.
+
+---------------29 /  3 / 2017-------------------
+
+
+- [x]  parser. (just poor implementation, part of it)
+
+
+#### The following is the feature of ~~29/3/2017~~ version:
+
+Currently it's actually not that like a powerful language, it just a minor C which is a subset of c. There are several difference comparing with modern C. 
+
+1. You can only define all your variable at the front of the function body.
+2. It do not support global variable.
 3. Support if/else, while, return statement
 4. Only int and char is supported, actually it can have pointer inside as long as you do not use it.
 5. Do not support function call.
@@ -89,28 +189,9 @@ pushl -4(%ebp)
 
 Actually it's x86 assembly that **can be actually accepted by gcc**, but i only test it on my mac, i am not sure if other linux version can run it. 
 
-
-
-### Have A Taste 
-
-1. install cmake and make.
-2. cmake CMakeLists.txt && make
-3. ./Simple-C_2.0 > test.s
-4. gcc -m32 test.s && ./a.out && echo $? (if nothing got wrong, you should got the return value in you screen )
-
-### Function Implemented  
-
----------------28 /  3 / 2017-------------------
-
-- [x] lexer.
-
 ---------------29 /  3 / 2017-------------------
 
-
-- [x]  parser. (just poor implementation, part of it)
-
-
+- [x] support function call
+- [x] tricky support printf  
 ### TODO :
-
-- [ ] support function call
-- [ ] support pointer
+- [x] support pointer

@@ -12,6 +12,6 @@ set(SOURCE_FILES
         word/Word.h
         word/Word.cpp
 #        vm.h vm.cpp
-        io/io.cpp io/io.h)
+        io/io.cpp io/io.h parse/Function.h parse/Variable.h)
 
 add_executable(Language_2 ${SOURCE_FILES})

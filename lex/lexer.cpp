@@ -23,32 +23,32 @@ void get_next_token(){
     } else if(isdigit(ch)){
         parse_number();
     } else if(ch == '+'){
-        pWord = Word::GetWord(PLUS, "+");
+        pWord = Word::GetWord(TK_PLUS, "+");
         get_next_char();
     } else if(ch == '-'){
-        pWord = Word::GetWord(MINUS, "-");
+        pWord = Word::GetWord(TK_MINUS, "-");
         get_next_char();
     } else if(ch == '*'){
-        pWord = Word::GetWord(STAR, "*");
+        pWord = Word::GetWord(TK_STAR, "*");
         get_next_char();
     } else if(ch == '/'){
-        pWord = Word::GetWord(DIVIDE, "/");
+        pWord = Word::GetWord(TK_DIVIDE, "/");
         get_next_char();
     } else if(ch == '%'){
-        pWord = Word::GetWord(MOD, "/");
+        pWord = Word::GetWord(TK_MOD, "/");
         get_next_char();
     } else if(ch == '='){
         get_next_char();
         if(ch == '='){
-            pWord = Word::GetWord(EQ, "==");
+            pWord = Word::GetWord(TK_EQ, "==");
             get_next_char();
         } else{
-            pWord = Word::GetWord(ASSIGN, "=");
+            pWord = Word::GetWord(TK_ASSIGN, "=");
         }
     } else if(ch == '!'){
         get_next_char();
         if(ch == '='){
-            pWord = Word::GetWord(NEQ, "!=");
+            pWord = Word::GetWord(TK_NEQ, "!=");
             get_next_char();
         } else{
             error("Do not support `!` yet !");
@@ -56,42 +56,42 @@ void get_next_token(){
     } else if(ch == '<'){
         get_next_char();
         if(ch == '='){
-            pWord = Word::GetWord(LEQ, "<=");
+            pWord = Word::GetWord(TK_LEQ, "<=");
             get_next_char();
         } else {
-            pWord = Word::GetWord(LT, "<");
+            pWord = Word::GetWord(TK_LT, "<");
         }
     } else if(ch == '>'){
         get_next_char();
         if(ch == '='){
-            pWord = Word::GetWord(GEQ, ">=");
+            pWord = Word::GetWord(TK_GEQ, ">=");
             get_next_char();
         } else {
-            pWord = Word::GetWord(GT, ">");
+            pWord = Word::GetWord(TK_GT, ">");
         }
     } else if(ch == ';'){
-        pWord = Word::GetWord(SEMICOLON, ";");
+        pWord = Word::GetWord(TK_SEMICOLON, ";");
         get_next_char();
     } else if(ch == '('){
-        pWord = Word::GetWord(LPA, "(");
+        pWord = Word::GetWord(TK_LPA, "(");
         get_next_char();
     } else if(ch == ')'){
-        pWord = Word::GetWord(RPA, ")");
+        pWord = Word::GetWord(TK_RPA, ")");
         get_next_char();
     } else if(ch == '['){
-        pWord = Word::GetWord(LSB, "[");
+        pWord = Word::GetWord(TK_LSB, "[");
         get_next_char();
     } else if(ch == ']'){
-        pWord = Word::GetWord(RSB, "]");
+        pWord = Word::GetWord(TK_RSB, "]");
         get_next_char();
     } else if(ch == '{'){
-        pWord = Word::GetWord(BEGIN, "{");
+        pWord = Word::GetWord(TK_BEGIN, "{");
         get_next_char();
     } else if(ch == '}') {
-        pWord = Word::GetWord(END, "}");
+        pWord = Word::GetWord(TK_END, "}");
         get_next_char();
     } else if(ch == ',') {
-        pWord = Word::GetWord(COMMA, ",");
+        pWord = Word::GetWord(TK_COMMAS, ",");
         get_next_char();
     } else if(ch == '\"') {
         parse_string();
@@ -210,7 +210,7 @@ void parse_number(){
         } while (true);
     }
 
-    pWord = Word::GetWord(NUMBER, string);
+    pWord = Word::GetWord(TK_NUMBER, string);
 }
 
 void parse_string(){
@@ -221,7 +221,7 @@ void parse_string(){
         if(startChar == ch){
             get_next_char();
             break;
-        } else if(ch == '\\'){
+        } else if(0){
             get_next_char();
             switch (ch){
                 case '0':
@@ -251,6 +251,6 @@ void parse_string(){
         }
     } while (true);
 
-    pWord = Word::GetWord(STR, string);
+    pWord = Word::GetWord(TK_STR, string);
 }
 

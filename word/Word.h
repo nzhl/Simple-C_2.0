@@ -1,5 +1,5 @@
-#ifndef LANGUAGE_1_TTKORD_H
-#define LANGUAGE_1_TTKORD_H
+#ifndef LANGUAGE_1_WORD_H
+#define LANGUAGE_1_WORD_H
 
 #include <string>
 #include <cstdlib>
@@ -7,35 +7,30 @@
 
 enum Token{
     //operator
-    STAR, DIVIDE, MOD,
-    PLUS, MINUS,
-    EQ, NEQ, LT, LEQ, GT, GEQ,
-    ASSIGN,
+    TK_STAR, TK_DIVIDE, TK_MOD,
+    TK_PLUS, TK_MINUS,
+    TK_EQ, TK_NEQ, TK_LT, TK_LEQ, TK_GT, TK_GEQ,
+    TK_ASSIGN,
 
     // left/right parenthesis ()
-    LPA, RPA,
+    TK_LPA, TK_RPA,
     // left/right square bracket : []
-    LSB, RSB,
+    TK_LSB, TK_RSB,
     // {}
-    BEGIN, END,
+    TK_BEGIN, TK_END,
 
-    COMMA, SEMICOLON, TK_EOF,
+    TK_COMMAS, TK_SEMICOLON, TK_EOF,
 
     // literals
-    NUMBER, STR,
+    TK_NUMBER, TK_STR,
 
-    INT, CHAR, VOID,
-    IF, ELSE, WHILE, CONTINUE, BREAK, RETURN,
+    // keywords
+    TK_INT, TK_CHAR, TK_VOID, TK_IF, TK_ELSE, TK_WHILE, TK_CONTINUE, TK_BREAK, TK_RETURN,
 
     //identifier
     ID
 };
 
-enum Scope{ Local, Global };
-
-enum Type{ T_INT = 0, T_CHAR, T_PTR };
-
-enum Property{ FUNCTION, VARIABLE };
 
 class Word;
 using PWord = Word*;
@@ -45,7 +40,7 @@ private:
     static Word temp;
 
     Word(int token = -1, const std::string &rawStr = "")
-            : token(token), rawStr(rawStr), range(Local){}
+            : token(token), rawStr(rawStr){}
 
 public:
     static PWord GetWord(int token = -1, const std::string &rawStr = "") {
@@ -60,7 +55,6 @@ public:
     }
 
 
-
     int convert2Number() const {
         return static_cast<int>(atof(rawStr.c_str()));
     }
@@ -69,16 +63,6 @@ public:
     static std::map<std::string, Word> table;
     int token;
     std::string rawStr;
-
-    // used by the parser
-
-    int range; // local /  global
-
-    int type; // int / char / ptr
-
-    int property;  // function / variable
-
-    int position;
 };
 
-#endif //LANGUAGE_1_TTKORD_H
+#endif //LANGUAGE_1_WORD_H

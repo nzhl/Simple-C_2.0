@@ -1,25 +1,10 @@
 #include "../io/io.h"
 #include "../lex/lexer.h"
 #include "../word/Word.h"
+#include "Function.h"
+#include "Variable.h"
 
-#include <vector>
 #include <stack>
-
-const static int WORD_LENGTH = 4;
-/*
-    parameter_decl ::= type {'*'} id {',' type {'*'} id}
-
-    body_decl ::= {variable_decl}, {statement}
-
-    statement ::= non_empty_statement | empty_statement
-
-    non_empty_statement ::= if_statement | while_statement | '{' statement '}'
-                          | 'return' expression | expression ';'
-
-    if_statement ::= 'if' '(' expression ')' statement ['else' non_empty_statement]
-
-    while_statement ::= 'while' '(' expression ')' non_empty_statement
-*/
 
 void program();
 
@@ -29,45 +14,67 @@ static void function_parameter_list();
 static void function_body();
 static void block();
 static void statement();
-static void expression();
 
+static void expression();
 static void assign_expression();
-static int boolean_expression();
-static int relation_expression();
-static int plus_minus_expression();
-static int multiply_division_expression();
-static int variable();
+static void boolean_expression();
+static void relation_expression();
+static void plus_minus_expression();
+static void multiply_division_expression();
+static void unary_expression();
+static void postfix_expression();
+
+static void function_argument_list(Function *callee);
 
 static void skip(int token);
-
 static void emit(const char* fmt, ...);
+
 
 extern PWord pWord;
 extern std::vector<std::string> codes;
 
-static PWord currentID;
+static std::map<std::string, Function> function_table;
+static PFunction pFunction;
+
+static std::map<std::string, Variable> global_variable_table;
+static std::stack<std::map<std::string, Variable>> local_variable_table_stack;
+static PVariable pVariable;
+
+static std::map<std::string, std::string> string_table;
+
+static int string_index = 0;
+static int label_index = 0;
+static int current_variable_position = 0;
+
+enum Type{ T_INT = 0, T_CHAR, T_PTR };
 
 void program(){
-    // program ::= {global_declaration}+
+    // program = {global_declaration}
 
-    // generate code for string
-    int string_index = 0;
-    for(auto &each : Word::table){
-        if(each.second.token == STR){
-            emit("l_str%d:", string_index++);
-            emit("\t\"%s\"", each.first.c_str());
-            each.second.position = string_index;
-        }
-    }
+
+    function_table.insert({"printf", Function()});
+    pFunction = &function_table["printf"];
+    pFunction->setName("_printf");
+    pFunction->getParameters().resize(2);
+    pFunction->setReturn_type(T_INT);
+
     get_next_token();
     while(pWord->token != TK_EOF){
         global_declaration();
     }
 
+    // generate code for string
+    for(auto &each : string_table){
+        emit("%s:\n\t.asciz\t\"%s\"", each.second.c_str(), each.first.c_str());
+    }
+
 #if 1
+    auto fp = fopen("/Users/zhangzhimin/test.s", "w");
     for(auto each : codes){
         printf("%s\n", each.c_str());
+        fprintf(fp, "%s\n", each.c_str());
     }
+
 #endif
 }
 
@@ -76,48 +83,51 @@ void global_declaration(){
     // variable_declaration ::= type {'*'} id { ',' {'*'} id } ';'
     // function_definition ::= type {'*'} id '(' parameter_declaration ')' '{' body_declaration '}'
 
-    //parse the type :
-    // 1. int = 0 (default)
-    // 2. char = 1
-    // 3. ptr = 2
+
     int type = T_INT;
-    if(pWord->token == INT){
+    if(pWord->token == TK_INT){
         type = T_INT;
-        skip(INT);
-    } else if(pWord->token == CHAR){
+        skip(TK_INT);
+    } else if(pWord->token == TK_CHAR){
         type = T_CHAR;
-        skip(CHAR);
+        skip(TK_CHAR);
     }
 
-    while (pWord->token != COMMA && pWord->token != END){
-        while (pWord->token == STAR){
-            skip(STAR);
+    while (pWord->token != TK_COMMAS){
+        while (pWord->token == TK_STAR){
+            skip(TK_STAR);
             type += T_PTR;
         }
 
         if(pWord->token != ID){
             error("identifier expected, but got %s", pWord->rawStr.c_str());
         }
-        if(pWord->range == Global){
-            error("duplicate global identifier %s", pWord->rawStr.c_str());
-        }
-        currentID = pWord;
+
+        auto name = pWord->rawStr;
         skip(ID);
 
-        currentID->range = Global;
-        currentID->type = type;
-        if(pWord->token == LPA){
-            currentID->property = FUNCTION;
-            // add the label for the function
+        if(pWord->token == TK_LPA){
+            // this is a function
+            // register the function in the function table
+            function_table.insert({name, Function()});
+            pFunction = &function_table[name];
+            pFunction->setName("_" + name);
+            pFunction->setReturn_type(type);
+
             // fresh the %ebp register
             // fresh the %ebp register
-            emit(".global _%s", currentID->rawStr.c_str());
-            emit("_%s", (currentID->rawStr + ":").c_str());
+            emit(".global %s", pFunction->getName().c_str());
+            emit("%s", (pFunction->getName() + ":").c_str());
             emit("\tpushl %%ebp");
             emit("\tmovl %%esp, %%ebp");
             function_definition();
             return;
         }
+
+        global_variable_table.insert({pWord->rawStr, Variable()});
+        pVariable = &global_variable_table[name];
+        pVariable->setType(type);
+        pVariable->setName(name);
     }
     skip(pWord->token);
 
@@ -131,59 +141,55 @@ void function_definition(){
      *  now deal with those part
      *  (...){...}
      */
+    local_variable_table_stack.push(std::map<std::string, Variable>());
 
-    skip(LPA);
+    skip(TK_LPA);
     function_parameter_list();
-    skip(RPA);
+    skip(TK_RPA);
 
     //{...}
     function_body();
+
+    local_variable_table_stack.pop();
 }
 
-/**
- *   ::= variable_declaration (COMMA variable_declaration)*
- */
-int variable_position = 0, parameter_number = 0, label_index = 0;
 
 void function_parameter_list(){
-    int type;
-    variable_position = 0;
-    while (pWord->token != RPA){
-        ++variable_position;
-        type = T_INT;
-        if (pWord->token == INT) {
-            type = T_INT;
-            skip(INT);
-        } else if (pWord->token == CHAR) {
-            type = T_CHAR;
-            skip(CHAR);
-        }
+    int type, parameter_index = 0;
 
-        while (pWord->token == STAR){
-            skip(STAR);
+    while (pWord->token != TK_RPA){
+        type = T_INT;
+        if (pWord->token == TK_INT) {
+            type = T_INT;
+            skip(TK_INT);
+        } else if (pWord->token == TK_CHAR) {
+            type = T_CHAR;
+            skip(TK_CHAR);
+        }
+        while (pWord->token == TK_STAR){
+            skip(TK_STAR);
             type += T_PTR;
         }
 
         if(pWord->token != ID){
             error("identifier expected, but got %s", pWord->rawStr.c_str());
         }
-        currentID = pWord;
+
+        local_variable_table_stack.top().insert({pWord->rawStr, Variable()});
+        pVariable = &local_variable_table_stack.top()[pWord->rawStr];
+        pVariable->setType(type);
+        pVariable->setName(pWord->rawStr);
+        pVariable->setRalative_position(parameter_index++);
+
+        pFunction->getParameters().push_back(type);
         skip(ID);
 
-        currentID->range = Local;
-        currentID->type = type;
-        currentID->property = VARIABLE;
-        // the part above is exactly like the function one
-        // TODO : save the global variable with the same name
-
-        currentID->position = variable_position;
-        if(pWord->token == COMMA){
-            skip(COMMA);
+        if(pWord->token == TK_COMMAS){
+            skip(TK_COMMAS);
             continue;
         }
-    }
 
-    parameter_number = variable_position;
+    }
 }
 
 
@@ -191,51 +197,52 @@ void function_body(){
     // now is this part
     // {...}
 
-    skip(BEGIN);
+    skip(TK_BEGIN);
 
-    int type;
+    int basic_type, variable_index = pFunction->getParameter_number();
 
     // ... {
     // 1. local declarations
     // 2. statements
     // }
-    while (pWord->token == INT || pWord->token == CHAR){
-        type = pWord->token == INT ? T_INT : T_CHAR;
+    while (pWord->token == TK_INT || pWord->token == TK_CHAR){
+        basic_type = pWord->token == TK_INT ? T_INT : T_CHAR;
         skip(pWord->token);
 
-        while (pWord->token != SEMICOLON) {
-            variable_position++;
-
-            while (pWord->token == STAR){
-                skip(STAR);
+        while (pWord->token != TK_SEMICOLON) {
+            int type = basic_type;
+            while (pWord->token == TK_STAR){
+                skip(TK_STAR);
                 type += T_PTR;
             }
             if (pWord->token != ID) {
                 error("identifier expected, but got %s", pWord->rawStr.c_str());
             }
 
-            currentID = pWord;
+            local_variable_table_stack.top().insert({pWord->rawStr, Variable()});
+            pVariable = &local_variable_table_stack.top()[pWord->rawStr];
+            pVariable->setType(type);
+            pVariable->setName(pWord->rawStr);
+            pVariable->setRalative_position(variable_index++);
             skip(ID);
 
-            currentID->range = Local;
-            currentID->type = type;
-            currentID->property = VARIABLE;
-            currentID->position = variable_position;
-            if (pWord->token == COMMA) {
-                skip(COMMA);
+            if (pWord->token == TK_COMMAS) {
+                skip(TK_COMMAS);
                 continue;
             }
         }
-        skip(SEMICOLON);
+        skip(TK_SEMICOLON);
     }
+
+    pFunction->setVariable_number(variable_index - pFunction->getParameter_number());
 
     // allocate enough space for the variable
-    emit("\tsubl $%d, %%esp", WORD_LENGTH * (variable_position - parameter_number));
+    emit("\tsubl $%d, %%esp", 4 * pFunction->getVariable_number());
 
-    while (pWord->token != END){
+    while (pWord->token != TK_END){
         statement();
     }
-    skip(END);
+    skip(TK_END);
 
     // free the space and return
     emit("\tleave");
@@ -243,11 +250,11 @@ void function_body(){
 }
 
 void block(){
-    skip(BEGIN);
-    while (pWord->token != END){
+    skip(TK_BEGIN);
+    while (pWord->token != TK_END){
         statement();
     }
-    skip(END);
+    skip(TK_END);
 }
 
 
@@ -262,39 +269,41 @@ void statement(){
  *    | {<statements>}
  */
 
-    if(pWord->token == IF){
-        skip(IF);
-        skip(LPA);
+    if(pWord->token == TK_IF){
+        skip(TK_IF);
+        skip(TK_LPA);
         expression();
-        skip(RPA);
+        skip(TK_RPA);
 
 
         // set the zero flag, if expression value is 0, then the flag is set.
         emit("\tpopl %%eax");
         emit("\ttestl %%eax, %%eax");
 
+        auto start_else_label = label_index++;
+        auto end_else_label = label_index++;
+
         // use the flag to jump
-        emit("\tje if_l%d", label_index);
+        emit("\tje if_l%d", start_else_label);
 
         block();
 
         // set the no condition jump after if statement
-        emit("\tjmp if_l%d", ++label_index);
-        emit("if_l%d:", label_index-1);
-        auto end_if_label = label_index++;
-        if(pWord->token == ELSE){
-            skip(ELSE);
+        emit("\tjmp if_l%d", end_else_label);
+        emit("if_l%d:", start_else_label);
+        if(pWord->token == TK_ELSE){
+            skip(TK_ELSE);
             block();
         }
-        emit("if_l%d:", end_if_label);
-    } else if(pWord->token == WHILE){
+        emit("if_l%d:", end_else_label);
+    } else if(pWord->token == TK_WHILE){
         emit("while_l%d:", label_index);
         auto start_while_label = label_index++;
         auto end_while_label = label_index++;
-        skip(WHILE);
-        skip(LPA);
+        skip(TK_WHILE);
+        skip(TK_LPA);
         expression();
-        skip(RPA);
+        skip(TK_RPA);
 
         // set the zero flag, if expression value is 0, then the flag is set.
         emit("\tpopl %%eax");
@@ -303,152 +312,263 @@ void statement(){
         block();
         emit("\tjmp while_l%d", start_while_label);
         emit("while_l%d:", end_while_label);
-    } else if(pWord->token == RETURN){
-        skip(RETURN);
+    } else if(pWord->token == TK_RETURN){
+        skip(TK_RETURN);
         expression();
         // put return value in %eax then return
         emit("\tpopl %%eax");
         emit("\tleave");
         emit("\tret");
-        skip(SEMICOLON);
-    } else if(pWord->token == BEGIN){
+        skip(TK_SEMICOLON);
+    } else if(pWord->token == TK_BEGIN){
         block();
-    } else if(pWord->token == SEMICOLON){
-        skip(SEMICOLON);
+    } else if(pWord->token == TK_SEMICOLON){
+        skip(TK_SEMICOLON);
     } else{
         // expression
         expression();
-        skip(SEMICOLON);
+        // drop the value of expression
+        emit("\tpopl %%eax");
+        skip(TK_SEMICOLON);
     }
 }
 
+//------------------------- expression part ---------------------------------
+
+// expression basic translation rule :
+// 1. finish operation
+// 2. put the expression value on the top of stack
 
 void expression(){
     assign_expression();
 }
 
-std::stack<int> opt, opa;
-int isAddress = 0;
 
-// 1. finish assign 2. put the expression value on the top of stack
+
 void assign_expression(){
-    opa = opt = std::stack<int>();
-    auto l = plus_minus_expression();
-    while (pWord->token == ASSIGN){
-        if(!isAddress){ error("%s is not a left value", pWord->rawStr.c_str()); }
+    boolean_expression();
 
-        skip(ASSIGN);
-        assign_expression();
+    while (pWord->token == TK_ASSIGN){
+        skip(TK_ASSIGN);
         emit("\tpopl %%eax");
-        emit("\tmovl %%eax, %d(%%ebp)", l);
-        emit("\tpushl %d(%%ebp)", l);
-    }
+        auto variable_position = current_variable_position;
+        assign_expression();
 
-    // put l in the top of stack
-    // if the return value is not address,
-    // then is already on the top of the stack
-    if(isAddress){
-        emit("\tmovl %d(%%ebp), %%eax", l);
-        emit("\tpushl %%eax");
+        emit("\tmovl (%%esp), %%eax");
+        emit("\tmovl %%eax, %d(%%ebp)", variable_position);
     }
 }
 
 
+void boolean_expression(){
+    //   boolean_expression = boolean_expression { ("==" | "!=") relation_expression) }
+    relation_expression();
 
-/**
- *  ::= relation_expression (( EQ | NEQ ) relation_expression)*
- */
-int boolean_expression(){ }
+    while(pWord->token == TK_EQ || pWord->token == TK_NEQ){
+        auto current_operator = pWord->token;
+        skip(pWord->token);
+        relation_expression();
 
-/**
- *  ::= plus_minus_expression ( (GT | GE | LT | LE) plus_minus_expression)*
- */
-int relation_expression(){ }
+        /*
+         *  left operand value : %esp + 4
+         *  right operand value : %esp
+         */
 
-/**
- *  ::=  multiply_division_expression (( PLUS / MINUS ) multiply_division_expression)*
- */
+        emit("\tpopl %%eax");
+        emit("\tcmpl %%eax, (%%esp)");
 
-int plus_minus_expression(){
-    int l = multiply_division_expression();
-    opa.push(isAddress); opa.push(l);
-    while (!opt.empty() && (opt.top() == STAR || opt.top() == DIVIDE || opt.top() == PLUS || opt.top() == MINUS)){
-        int left = opa.top(); opa.pop();
-        // put the right value on the top of the stack
-        if(opa.top() == 1){
-            //is address, put the value in %eax
-            emit("\tmovl %d(%%ebp), %%eax", left);
-            emit("\tpushl %%eax", left);
-        }
-        opa.pop();
-
-
-        // put the left value in %eax
-        int right = opa.top(); opa.pop();
-        if(opa.top() == 1){
-            //is address, put the value in %eax
-            emit("\tmovl %d(%%ebp), %%eax", right);
+        if( current_operator == TK_EQ){
+            emit("\tsete (%%esp)");
         } else{
-            emit("\tpopl %%eax");
+            emit("\tsetne (%%esp)");
         }
-        opa.pop();
-
-
-        if(opt.top() == STAR){
-            emit("\timull (%%esp)");
-        } else if(opt.top() == DIVIDE){
-            emit("\tidivl (%%esp)");
-        } else if( opt.top() == PLUS){
-            emit("\taddl (%%esp), %%eax");
-        } else{
-            emit("\tsubl (%%esp), %%eax");
-        }
-        opt.pop();
-
-        isAddress = 0;
-        emit("\tpushl %%eax");
     }
-    if(pWord->token == PLUS || pWord->token == MINUS){
-        opt.push(pWord->token);
+}
+
+void relation_expression(){
+    plus_minus_expression();
+
+    while(pWord->token == TK_GT || pWord->token == TK_GEQ || pWord->token == TK_LT || pWord->token == TK_LEQ){
+        auto current_operator = pWord->token;
         skip(pWord->token);
         plus_minus_expression();
-    }else{
-        if(!opt.empty()){
-            error("Error operator %s", opt.top());
+
+        emit("\tpopl %%eax");
+        emit("\tcmpl %%eax, (%%esp)");
+
+        if( current_operator == TK_GT){
+            emit("\tsetg (%%esp)");
+        } else if (current_operator == TK_GEQ){
+            emit("\tsetge (%%esp)");
+        } else if ( current_operator == TK_LT){
+            emit("\tsetl (%%esp)");
+        } else{
+            emit("\tsetle (%%esp)");
         }
     }
-    return l;
 }
 
-/**
- *  ::= (variable | const_value) (( STAR | DIVIDE | MOD ) variable)*
- */
-int multiply_division_expression(){
-    return variable();
+void plus_minus_expression(){
+ //     plus_minus_expression = plus_minus_expression { ("+" | "-") multiply_division_expression) }
+ //
+ //                             Left Recursive Elimination
+ //
+ //     plus_minus_expression = multiply_division_expression helper
+ //     helper = ("+" | "-") multiply_division_expression helper | E
+
+    multiply_division_expression();
+
+    while(pWord->token == TK_PLUS || pWord->token == TK_MINUS){
+        auto current_operator = pWord->token;
+        skip(pWord->token);
+        multiply_division_expression();
+
+        /*
+         *  left operand value : %esp + 4
+         *  right operand value : %esp
+         */
+
+        // move right operand into eax
+        emit("\tpopl %%eax");
+
+        if( current_operator == TK_PLUS){
+            emit("\taddl %%eax, (%%esp)");
+        } else{
+            emit("\tsubl %%eax, (%%esp)");
+        }
+    }
 }
 
-int variable(){
-    int re = 0;
-    if(pWord->token == NUMBER){
-        isAddress = 0;
+void multiply_division_expression(){
+    unary_expression();
+
+    while(pWord->token == TK_STAR || pWord->token == TK_DIVIDE){
+        auto current_operator = pWord->token;
+        skip(pWord->token);
+        unary_expression();
+
+        // move **left value** to eax
+        emit("\tmovl 4(%%esp), %%eax");
+
+        if( current_operator == TK_STAR){
+            emit("\timull (%%esp)");
+        } else{
+            emit("\tcltd ");
+            emit("\tidivl (%%esp)");
+        }
+
+        emit("\tsubl $8, %%esp");
+        emit("\tpushl %%eax");
+    }
+}
+
+void unary_expression(){
+    if(pWord->token == TK_PLUS){
+
+        // TODO : +3;
+
+    } else if(pWord->token == TK_MINUS){
+
+        // TODO : -x;
+
+    } else if(pWord->token == TK_STAR){
+
+        //TODO *x;
+
+    } else{
+        postfix_expression();
+    }
+}
+
+void postfix_expression(){
+    if(pWord->token == TK_NUMBER){
         emit("\tpushl $%d", pWord->convert2Number());
-        skip(NUMBER);
+        skip(TK_NUMBER);
+    }else if(pWord->token == TK_STR){
+        std::string string_label;
+        if(string_table.find(pWord->rawStr) == string_table.cend()){
+            char buffer[256]; memset(buffer, 0, 256);
+            sprintf(buffer, "str%d", string_index++);
+            string_table.insert({pWord->rawStr, std::string(buffer)});
+        }
+        string_label = string_table[pWord->rawStr];
+        char buffer[256]; memset(buffer, 0, 256);
+        sprintf(buffer, "str_helper%d", label_index++);
+        auto string_helper_label = std::string(buffer);
+
+        // find the relative address of the string and put it on the stack
+        emit("\tcall %s", string_helper_label.c_str());
+        emit("%s:", string_helper_label.c_str());
+        emit("\tpopl %%eax");
+        emit("\tleal %s-%s(%%eax), %%eax", string_label.c_str(), string_helper_label.c_str());
+        emit("\tpushl %%eax");
+        skip(TK_STR);
     } else if(pWord->token == ID){
-        isAddress = 1;
-        re = pWord->position;
-        if(re <= parameter_number){
-            re = (parameter_number - re) * WORD_LENGTH + 8;
+        auto tempWord = pWord; skip(ID);
+
+        if(pWord->token == TK_LPA){
+            //function call
+            if(function_table.find(tempWord->rawStr) == function_table.cend()){
+                error("no matching function %s", tempWord->rawStr.c_str());
+            }
+            function_argument_list(&function_table[tempWord->rawStr]);
         }
         else{
-            re = -(re - parameter_number) * WORD_LENGTH;
-        }
-        skip(ID);
-    } else{
-        //TODO : function call
-    }
+            // variable
+            if(local_variable_table_stack.top().find(tempWord->rawStr) != local_variable_table_stack.top().cend()){
+                pVariable = &local_variable_table_stack.top()[tempWord->rawStr];
+            }else if(global_variable_table.find(tempWord->rawStr) != global_variable_table.cend()){
+                pVariable = &global_variable_table[tempWord->rawStr];
+            }else {
+                error("undefined variable %s", tempWord->rawStr.c_str());
+            }
 
-    return re;
+            if(pVariable->getRalative_position() < pFunction->getParameter_number()){
+                // function parameter
+                current_variable_position = pVariable->getRalative_position() * 4 + 8;
+            } else{
+                // variable
+                current_variable_position = (pFunction->getParameter_number() - pVariable->getRalative_position() - 1) * 4;
+            }
+            emit("\tmovl %d(%%ebp), %%eax", current_variable_position);
+            emit("\tpushl %%eax", current_variable_position);
+        }
+    }
 }
+
+static void function_argument_list(Function *callee){
+    skip(TK_LPA);
+
+    // allocate space for function call
+    if(callee->getName() == "_printf"){
+        // mac align conversion : 16 bytes
+        emit("\tsubl $%d, %%esp", 8 + pFunction->getVariable_number() * 4 + 8 / 16 * 16 + 16);
+    } else{
+        emit("\tsubl $%d, %%esp", callee->getParameter_number() * 4);
+    }
+    int i = 0;
+    while (true){
+        expression();
+        emit("\tpopl %%eax");
+        emit("\tmovl %%eax, %d(%%esp)", i);
+        if(pWord->token != TK_COMMAS) break;
+        skip(TK_COMMAS);
+        i += 4;
+    }
+    skip(TK_RPA);
+    emit("\tcall %s", callee->getName().c_str());
+    // free space for function call
+    if(callee->getName() == "_printf"){
+        emit("\taddl $%d, %%esp", 8 + pFunction->getVariable_number() * 4 + 8 / 16 * 16 + 16);
+    } else{
+        emit("\taddl $%d, %%esp", callee->getParameter_number() * 4);
+    }
+    emit("\tpushl %%eax");
+}
+
+
+// ----------------------- helper ------------------------------------------
+
 
 void skip(int token){
     if(pWord->token == token) {

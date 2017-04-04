@@ -30,6 +30,7 @@ static void skip(int token);
 static void emit(const char* fmt, ...);
 
 
+extern char *FilePath;
 extern PWord pWord;
 extern std::vector<std::string> codes;
 
@@ -45,6 +46,7 @@ static std::map<std::string, std::string> string_table;
 static int string_index = 0;
 static int label_index = 0;
 static int current_variable_position = 0;
+static int isArray = 0;
 
 enum Type{ T_INT = 0, T_CHAR, T_PTR };
 
@@ -68,14 +70,18 @@ void program(){
         emit("%s:\n\t.asciz\t\"%s\"", each.second.c_str(), each.first.c_str());
     }
 
-#if 1
-    auto fp = fopen("/Users/zhangzhimin/test.s", "w");
+    const auto outputPath = std::string(FilePath) + ".s";
+    const auto cmd = std::string("gcc -m32 -o ") + outputPath.substr(0, outputPath.size()-4) + " " + outputPath.c_str();
+    auto fp = fopen(outputPath.c_str(), "w");
     for(auto each : codes){
+#if 0
         printf("%s\n", each.c_str());
+#endif
         fprintf(fp, "%s\n", each.c_str());
     }
-
-#endif
+    fclose(fp);
+    printf("%s\n", cmd.c_str());
+    system(cmd.c_str());
 }
 
 void global_declaration(){
@@ -179,7 +185,7 @@ void function_parameter_list(){
         pVariable = &local_variable_table_stack.top()[pWord->rawStr];
         pVariable->setType(type);
         pVariable->setName(pWord->rawStr);
-        pVariable->setRalative_position(parameter_index++);
+        pVariable->setRelative_position(parameter_index++);
 
         pFunction->getParameters().push_back(type);
         skip(ID);
@@ -188,7 +194,6 @@ void function_parameter_list(){
             skip(TK_COMMAS);
             continue;
         }
-
     }
 }
 
@@ -199,7 +204,7 @@ void function_body(){
 
     skip(TK_BEGIN);
 
-    int basic_type, variable_index = pFunction->getParameter_number();
+    int basic_type, pos = -4;
 
     // ... {
     // 1. local declarations
@@ -223,8 +228,21 @@ void function_body(){
             pVariable = &local_variable_table_stack.top()[pWord->rawStr];
             pVariable->setType(type);
             pVariable->setName(pWord->rawStr);
-            pVariable->setRalative_position(variable_index++);
+            pVariable->setRelative_position(pos);
             skip(ID);
+
+            pos -= 4;
+
+            if(pWord->token == TK_LSB){
+                skip(TK_LSB);
+                //ARRAY
+                pVariable->setSize(pWord->convert2Number());
+                pVariable->setType(pVariable->getType() + T_PTR);
+                skip(TK_NUMBER);
+                skip(TK_RSB);
+                pos -= (pVariable->getSize() - 1) * 4;
+                pVariable->setRelative_position(pos + 4);
+            }
 
             if (pWord->token == TK_COMMAS) {
                 skip(TK_COMMAS);
@@ -234,10 +252,10 @@ void function_body(){
         skip(TK_SEMICOLON);
     }
 
-    pFunction->setVariable_number(variable_index - pFunction->getParameter_number());
+    pFunction->setAllocated_size(-pos-4);
 
     // allocate enough space for the variable
-    emit("\tsubl $%d, %%esp", 4 * pFunction->getVariable_number());
+    emit("\tsubl $%d, %%esp", pFunction->getAllocated_size());
 
     while (pWord->token != TK_END){
         statement();
@@ -340,6 +358,7 @@ void statement(){
 // 2. put the expression value on the top of stack
 
 void expression(){
+    isArray = 0;
     assign_expression();
 }
 
@@ -355,7 +374,14 @@ void assign_expression(){
         assign_expression();
 
         emit("\tmovl (%%esp), %%eax");
-        emit("\tmovl %%eax, %d(%%ebp)", variable_position);
+        if(isArray){
+            //array
+            isArray = 0;
+            emit("\tmovl %%eax, %d(%%ebp, %%ecx, 4)", variable_position);
+        }
+        else{
+            emit("\tmovl %%eax, %d(%%ebp)", variable_position);
+        }
     }
 }
 
@@ -523,15 +549,29 @@ void postfix_expression(){
                 error("undefined variable %s", tempWord->rawStr.c_str());
             }
 
-            if(pVariable->getRalative_position() < pFunction->getParameter_number()){
+            if(pVariable->getRelative_position() > 0){
                 // function parameter
-                current_variable_position = pVariable->getRalative_position() * 4 + 8;
+                current_variable_position = pVariable->getRelative_position() * 4 + 8;
             } else{
                 // variable
-                current_variable_position = (pFunction->getParameter_number() - pVariable->getRalative_position() - 1) * 4;
+                current_variable_position = pVariable->getRelative_position();
             }
-            emit("\tmovl %d(%%ebp), %%eax", current_variable_position);
-            emit("\tpushl %%eax", current_variable_position);
+            if(pWord->token == TK_LSB){
+                //array
+                skip(TK_LSB);
+                auto local_variable_position = current_variable_position;
+                expression();
+                emit("\tpopl %%ecx");
+                emit("\tmovl %d(%%ebp, %%ecx, 4), %%eax", local_variable_position);
+                emit("\tpushl %%eax");
+                isArray = 1;
+                current_variable_position = local_variable_position;
+                skip(TK_RSB);
+            }
+            else{
+                emit("\tmovl %d(%%ebp), %%eax", current_variable_position);
+                emit("\tpushl %%eax", current_variable_position);
+            }
         }
     }
 }
@@ -542,7 +582,7 @@ static void function_argument_list(Function *callee){
     // allocate space for function call
     if(callee->getName() == "_printf"){
         // mac align conversion : 16 bytes
-        emit("\tsubl $%d, %%esp", 8 + pFunction->getVariable_number() * 4 + 8 / 16 * 16 + 16);
+        emit("\tsubl $%d, %%esp", 8 + 16 - (8 + pFunction->getAllocated_size() + 8) % 16 );
     } else{
         emit("\tsubl $%d, %%esp", callee->getParameter_number() * 4);
     }
@@ -559,7 +599,7 @@ static void function_argument_list(Function *callee){
     emit("\tcall %s", callee->getName().c_str());
     // free space for function call
     if(callee->getName() == "_printf"){
-        emit("\taddl $%d, %%esp", 8 + pFunction->getVariable_number() * 4 + 8 / 16 * 16 + 16);
+        emit("\taddl $%d, %%esp", (8 + 16 - (8 + pFunction->getAllocated_size() + 8) % 16 ));
     } else{
         emit("\taddl $%d, %%esp", callee->getParameter_number() * 4);
     }

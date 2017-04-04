@@ -14,7 +14,7 @@ private:
     int return_type;
     std::string name;
     std::vector<int> parameters;
-    int variable_number;
+    int allocated_size;
 
 public:
     int getReturn_type() const {
@@ -37,16 +37,16 @@ public:
         return parameters;
     }
 
-    int getVariable_number() const {
-        return variable_number;
-    }
-
-    void setVariable_number(int variable_number) {
-        Function::variable_number = variable_number;
-    }
-
     int getParameter_number() const {
         return static_cast<int>(parameters.size());
+    }
+
+    int getAllocated_size() const {
+        return allocated_size;
+    }
+
+    void setAllocated_size(int allocated_size) {
+        Function::allocated_size = allocated_size;
     }
 };
 

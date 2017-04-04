@@ -7,7 +7,7 @@
 
 // ------------ Error reporting  part ------------------------
 
-const static char* FilePath = "/Users/zhangzhimin/test.c";
+char* FilePath;
 
 int current_line;
 

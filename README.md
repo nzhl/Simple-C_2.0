@@ -10,71 +10,42 @@ Currently it's actually not that like a powerful language, it just a minor C whi
 2. It do not support global variable.
 3. Support if/else, while, return statement.
 4. Support function call now, embedded printf in a tricky way.
+5. Support array
 
 Here is an example that basically cover all the language feature now.
 
 ```c
-int main(){
-    int x, y;
-
-    x = y = 1;
-    if(x) {
-        while(x < 11){
-            x = x + 1;
-            y = y * 2;
-            printf("current x value = %d\n", x);
-            printf("current y value = %d\n", y);
-            printf("%s", "\n\n");
-        }
-    }
-    else{
-        printf("can not reach here : %d\n", x);
-    }
+int main(int argc, char** argv){
+    int i, x[10];              
+                              
+    i = 0;                   
+    while(i < 10){      
+        x[i] = 10 - i;   
+        i = i + 1;     
+    }                   
+                             
+    i = 0;                    
+    while(i < 10){             
+        printf("%d\n", x[i]);    
+        i = i + 1;              
+    }                         
 }
 ```
+
 `gcc -m32 test.s && ./a.out`
 
-```
-$ ./a.out
-current x value = 2
-current y value = 2
-
-
-current x value = 3
-current y value = 4
-
-
-current x value = 4
-current y value = 8
-
-
-current x value = 5
-current y value = 16
-
-
-current x value = 6
-current y value = 32
-
-
-current x value = 7
-current y value = 64
-
-
-current x value = 8
-current y value = 128
-
-
-current x value = 9
-current y value = 256
-
-
-current x value = 10
-current y value = 512
-
-
-current x value = 11
-current y value = 1024
-
+```shell
+$ ./test     
+10          
+9          
+8      
+7     
+6    
+5   
+4     
+3    
+2   
+1
 ```
 
 
@@ -193,5 +164,12 @@ Actually it's x86 assembly that **can be actually accepted by gcc**, but i only 
 
 - [x] support function call
 - [x] tricky support printf  
+
+---------------29 /  3 / 2017-------------------
+
+- [x] support array
+
 ### TODO :
-- [x] support pointer
+
+- [ ] split the parse and generation process
+- [ ] support 64bit rather than 32 bit

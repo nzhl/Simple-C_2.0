@@ -11,8 +11,8 @@ class Variable {
 private:
     int type;
     std::string name;
-    int ralative_position;
-
+    int relative_position;
+    int size;
 public:
     int getType() const {
         return type;
@@ -30,12 +30,20 @@ public:
         Variable::name = name;
     }
 
-    int getRalative_position() const {
-        return ralative_position;
+    int getRelative_position() const {
+        return relative_position;
     }
 
-    void setRalative_position(int ralative_position) {
-        Variable::ralative_position = ralative_position;
+    void setRelative_position(int ralative_position) {
+        Variable::relative_position = ralative_position;
+    }
+
+    int getSize() const {
+        return size;
+    }
+
+    void setSize(int size) {
+        Variable::size = size;
     }
 };
 

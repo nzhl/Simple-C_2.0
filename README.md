@@ -49,17 +49,12 @@ $ ./test
 ```
 
 
-
-
 ### Have A Taste 
 
 1. install cmake and make.
-2. do some change :
-    + input_file_path in `io.cpp` line 10 
-    + output_file_path in `parser.cpp` in line 72.
-3. cmake CMakeLists.txt && make
-4. ./Simple-C_2.0 
-5. gcc -m32 test.s && ./a.out 
+2. cmake CMakeLists.txt && make
+3. ./Simple-C_2.0 _your_file_path.c
+4. ./_you_file_path
 
 ### Function Implemented  
 
@@ -165,7 +160,7 @@ Actually it's x86 assembly that **can be actually accepted by gcc**, but i only 
 - [x] support function call
 - [x] tricky support printf  
 
----------------29 /  3 / 2017-------------------
+---------------4 /  4 / 2017-------------------
 
 - [x] support array
 

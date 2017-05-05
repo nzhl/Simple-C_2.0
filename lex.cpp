@@ -1,7 +1,10 @@
-#include "../io/io.h"
-#include "../word/Word.h"
+#include "lex.h"
 
 #include <iostream>
+
+#include "io/io.h"
+#include "word/Word.h"
+
 
 extern int current_line;
 extern PWord pWord;

@@ -1,5 +1,5 @@
 #include "../io/io.h"
-#include "../lex/lexer.h"
+#include "../lex.h"
 #include "../word/Word.h"
 #include "Function.h"
 #include "Variable.h"

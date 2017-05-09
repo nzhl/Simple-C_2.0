@@ -1,0 +1,28 @@
+//  file related
+
+//  C header
+#include <stdio.h>
+
+
+//  third-party
+
+
+//  project related
+
+
+//---------------------------------------------
+
+static char *infile;
+static char *outfile;
+
+
+int main(int argc, char* argv[]) {
+    // set no buffer, useful for debug.
+    setbuf(stdout, NULL);
+
+    // todo parse option ...
+
+    infile = argv[1];
+
+
+}

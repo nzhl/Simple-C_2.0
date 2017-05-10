@@ -1,8 +1,4 @@
-typedef struct {
-    void **body;
-    int len;
-    int nalloc;
-} Vector;
+typedef struct Vector Vector;
 
 Vector *make_vector();
 

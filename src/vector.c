@@ -6,6 +6,12 @@
 
 #define MIN_SIZE 8
 
+struct Vector {
+    void **body;
+    int len;
+    int nalloc;
+};
+
 static int max(int left, int right){
     return left > right ? left : right;
 }
@@ -42,7 +48,9 @@ static void extend_vector(Vector *vec, int delta){
     int new_nalloc = max(round_up(vec->len), MIN_SIZE);
     void **new_body = malloc(sizeof(void *) * new_nalloc);
     memcpy(new_body, vec->body, sizeof(void *) * vec->len);
-    free(vec->body);
+    if(vec->nalloc != 0){
+        free(vec->body);
+    }
     vec->body = new_body;
     vec->nalloc = new_nalloc;
 }
@@ -77,7 +85,7 @@ void *vec_pop(Vector *vec){
 
 void vec_append(Vector *v1, Vector *v2){
     extend_vector(v1, v2->len);
-    memcpy(v1->body + v1->len, v2, sizeof(void *) * v2->len);
+    memcpy(v1->body + v1->len, v2->body, sizeof(void *) * v2->len);
     v1->len += v2->len;
 }
 
@@ -104,5 +112,4 @@ void *vec_tail(Vector *vec){
 int vec_len(Vector *vec){
     return vec->len;
 }
-
 

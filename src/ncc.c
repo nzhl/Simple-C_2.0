@@ -23,7 +23,4 @@ int main(int argc, char* argv[]) {
     // todo parse option ...
 
     infile = argv[1];
-
-    int x = 0;
-    assert(x==1);
 }

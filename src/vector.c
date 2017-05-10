@@ -41,7 +41,7 @@ static void extend_vector(Vector *vec, int delta){
 
     int new_nalloc = max(round_up(vec->len), MIN_SIZE);
     void **new_body = malloc(sizeof(void *) * new_nalloc);
-    memcpy(new_body, vec->body, vec->len);
+    memcpy(new_body, vec->body, sizeof(void *) * vec->len);
     free(vec->body);
     vec->body = new_body;
     vec->nalloc = new_nalloc;
@@ -90,4 +90,19 @@ void vec_set(Vector *vec, int index, void *elem){
     assert(index >= 0 && index < vec->len);
     vec->body[index] = elem;
 }
+
+void *vec_head(Vector *vec){
+    assert(vec->len > 0);
+    return vec->body[0];
+}
+
+void *vec_tail(Vector *vec){
+    assert(vec->len > 0);
+    return vec->body[vec->len-1];
+}
+
+int vec_len(Vector *vec){
+    return vec->len;
+}
+
 

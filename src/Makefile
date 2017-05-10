@@ -6,3 +6,12 @@ ncc: ncc.o
 
 run: ncc
 	./ncc
+
+
+
+
+
+cleanAll: clean
+	rm -f ncc
+clean: 
+	rm -f ncc.o

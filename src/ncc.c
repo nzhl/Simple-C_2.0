@@ -2,7 +2,7 @@
 
 //  C header
 #include <stdio.h>
-
+#include <assert.h>
 
 //  third-party
 
@@ -24,5 +24,6 @@ int main(int argc, char* argv[]) {
 
     infile = argv[1];
 
-
+    int x = 0;
+    assert(x==1);
 }

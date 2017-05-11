@@ -4,34 +4,34 @@
 #include "test.h"
 #include "../vector.h"
 
-void test_make_vector(){
+static void test_make_vector(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     Vector *vec = make_vector();
     expecti(0, vec_len(vec));
-    free(vec);
+    destroy_vector(vec);
 }
 
-void test_make_vector_with(){
+static void test_make_vector_with(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp = 666;
     Vector *vec = make_vector_with(&temp);
     expecti(1, vec_len(vec));
     expecti(temp, *(int *)vec_get(vec, 0));
-    free(vec);
+    destroy_vector(vec);
 }
 
-void test_make_vector_copy(){
+static void test_make_vector_copy(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp = 666;
     Vector *vec1 = make_vector_with(&temp);
     Vector *vec2 = make_vector_copy(vec1);
     expecti(1, vec_len(vec2));
     expecti(temp, *(int *)vec_get(vec2, 0));
-    free(vec1);
-    free(vec2);
+    destroy_vector(vec1);
+    destroy_vector(vec2);
 }
 
-void test_vec_push(){
+static void test_vec_push(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp1 = 666;
     int temp2 = 777;
@@ -44,10 +44,10 @@ void test_vec_push(){
     expecti(2, vec_len(vec));
     expecti(temp1, *(int *)vec_get(vec, 0));
     expecti(temp2, *(int *)vec_get(vec, 1));
-    free(vec);
+    destroy_vector(vec);
 }
 
-void test_vec_pop(){
+static void test_vec_pop(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp1 = 666;
     int temp2 = 777;
@@ -57,10 +57,10 @@ void test_vec_pop(){
     expecti(temp2, *(int *)vec_pop(vec));
     expecti(1, vec_len(vec));
     expecti(temp1, *(int *)vec_get(vec, 0));
-    free(vec);
+    destroy_vector(vec);
 }
 
-void test_vec_append(){
+static void test_vec_append(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp1 = 666;
     int temp2 = 777;
@@ -74,11 +74,11 @@ void test_vec_append(){
     expecti(1, vec_len(vec2));
     expecti(temp2, *(int *)vec_get(vec2, 0));
 
-    free(vec1);
-    free(vec2);
+    destroy_vector(vec1);
+    destroy_vector(vec2);
 }
 
-void test_vec_get(){
+static void test_vec_get(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp = 666;
     Vector *vec = make_vector_with(&temp);
@@ -87,10 +87,10 @@ void test_vec_get(){
     expecti(1, vec_len(vec));
     expecti(temp, *(int *)vec_pop(vec));
 
-    free(vec);
+    destroy_vector(vec);
 }
 
-void test_vec_set(){
+static void test_vec_set(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp1 = 666;
     int temp2 = 777;
@@ -100,10 +100,10 @@ void test_vec_set(){
     expecti(1, vec_len(vec));
     expecti(temp2, *(int *)vec_get(vec, 0));
 
-    free(vec);
+    destroy_vector(vec);
 }
 
-void test_vec_head(){
+static void test_vec_head(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp1 = 666;
     int temp2 = 777;
@@ -119,10 +119,10 @@ void test_vec_head(){
     expecti(temp1, *(int *)vec_get(vec, 0));
     expecti(temp2, *(int *)vec_get(vec, 1));
     expecti(temp3, *(int *)vec_get(vec, 2));
-    free(vec);
+    destroy_vector(vec);
 }
 
-void test_vec_tail(){
+static void test_vec_tail(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
     int temp1 = 666;
     int temp2 = 777;
@@ -138,7 +138,7 @@ void test_vec_tail(){
     expecti(temp1, *(int *)vec_get(vec, 0));
     expecti(temp2, *(int *)vec_get(vec, 1));
     expecti(temp3, *(int *)vec_get(vec, 2));
-    free(vec);
+    destroy_vector(vec);
 }
 
 void test(){

@@ -6,6 +6,8 @@ Vector *make_vector_with(void *elem);
 
 Vector *make_vector_copy(Vector *src);
 
+void destroy_vector(Vector *vec);
+
 void vec_push(Vector *vec, void* elem);
 
 void *vec_pop(Vector *vec);

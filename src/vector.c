@@ -72,6 +72,14 @@ Vector *make_vector_copy(Vector *src){
     return v;
 }
 
+void destroy_vector(Vector *vec){
+    assert(vec);
+    if(vec->nalloc != 0){
+        free(vec->body);
+    }
+    free(vec);
+}
+
 void vec_push(Vector *vec, void *elem){
     extend_vector(vec, 1);
     vec->body[vec->len++] = elem;

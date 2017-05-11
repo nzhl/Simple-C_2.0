@@ -43,7 +43,7 @@ struct Map{
     // nused = nelem + ndeleted
     int nelem;
     int nused;
-}
+};
 
 //FNV-a hash
 static uint32_t hash(char *p){
@@ -53,6 +53,7 @@ static uint32_t hash(char *p){
         hash *= FNV_PRIME_32;
         ++p;
     }
+    return hash;
 }
 
 static Map *do_make_map(Map *parent, int size){
@@ -118,16 +119,24 @@ Map *make_map_parent(Map *parent){
     return do_make_map(parent, INIT_SIZE);
 }
 
+void destroy_map(Map *map){
+    assert(map);
+    free(map->key);
+    free(map->value);
+    free(map);
+}
+
+
 // won't recursively search parent map.
-static *map_get_locally(Map *map, char *key){
+static void *map_get_locally(Map *map, char *key){
     if(!key){
         return NULL;
     }
 
-    mask = map->size - 1;
+    int mask = map->size - 1;
     int index = hash(key) & mask;
     for(; map->key[index] != NULL; index = (index + 1) & mask){
-        if(map->key[index] != DELETED_FLAG && !strcmp(m->key[index], key)){
+        if(map->key[index] != DELETED_FLAG && !strcmp(map->key[index], key)){
             return map->value[index];
         }
     }
@@ -158,7 +167,7 @@ void map_put(Map *map, char *key, void *value){
         if(temp_key == NULL || temp_key == DELETED_FLAG){
             map->key[index] = key;
             map->value[index] = value;
-            ++m->nelem;
+            ++map->nelem;
             if(temp_key == NULL){
                 ++map->nused;
             }

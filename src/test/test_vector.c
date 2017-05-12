@@ -33,18 +33,21 @@ static void test_make_vector_copy(){
 
 static void test_vec_push(){
     printf("\n\nCurrent Function : %s\n\n", __FUNCTION__);
-    int temp1 = 666;
-    int temp2 = 777;
+
+    int list[100];
+    for(int i = 0; i < 100; ++i){
+        list[i] = i;
+    }
+
     Vector *vec = make_vector();
     expecti(0, vec_len(vec));
-    vec_push(vec,&temp1);
-    expecti(1, vec_len(vec));
-    expecti(temp1, *(int *)vec_get(vec, 0));
-    vec_push(vec,&temp2);
-    expecti(2, vec_len(vec));
-    expecti(temp1, *(int *)vec_get(vec, 0));
-    expecti(temp2, *(int *)vec_get(vec, 1));
-    destroy_vector(vec);
+
+    for(int i = 0; i < 100; ++i){
+        vec_push(vec, &list[i]);
+        expecti(i + 1, vec_len(vec));
+        expecti(list[i], *(int *)vec_get(vec, i));
+    }
+    //destroy_vector(vec);
 }
 
 static void test_vec_pop(){

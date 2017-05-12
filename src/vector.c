@@ -22,7 +22,7 @@ static int round_up(int n){
         return 0;
     }
     int r = 1;
-    while(n > r){
+    while(n >= r){
         r *= 2;
     }
     return r;
@@ -40,15 +40,15 @@ static Vector *do_make_vector(int size){
 }
 
 static void extend_vector(Vector *vec, int delta){
-    // already enough space, no need t extend
+    // already enough space, no need to extend
     if(vec->len + delta <= vec->nalloc){
         return;
     }
 
-    int new_nalloc = max(round_up(vec->len), MIN_SIZE);
+    int new_nalloc = max(round_up(vec->nalloc), MIN_SIZE);
     void **new_body = malloc(sizeof(void *) * new_nalloc);
-    memcpy(new_body, vec->body, sizeof(void *) * vec->len);
     if(vec->nalloc != 0){
+        memcpy(new_body, vec->body, sizeof(void *) * vec->len);
         free(vec->body);
     }
     vec->body = new_body;

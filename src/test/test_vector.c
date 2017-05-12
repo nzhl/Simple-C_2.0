@@ -47,7 +47,7 @@ static void test_vec_push(){
         expecti(i + 1, vec_len(vec));
         expecti(list[i], *(int *)vec_get(vec, i));
     }
-    //destroy_vector(vec);
+    destroy_vector(vec);
 }
 
 static void test_vec_pop(){

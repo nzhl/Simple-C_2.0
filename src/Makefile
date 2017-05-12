@@ -11,7 +11,7 @@ run: ncc
 test: $(patsubst %.c, %.o, $(TESTSRCS))
 	cd test && cc -c test.c $(patsubst %.c, test_%.c, $(TESTSRCS))
 	$(foreach each, $(TESTSRCS), \
-		echo $(each); \
+		echo "Current Test File :  $(each)"; \
 		gcc -o do_test test/test.o $(patsubst %.c, test/test_%.o, $(each)) $(patsubst %.c, %.o, $(each)); \
 		./do_test; \
 	)

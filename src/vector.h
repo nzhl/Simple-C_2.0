@@ -1,3 +1,6 @@
+#ifndef VECTOR_H
+#define VECTOR_H
+
 typedef struct Vector Vector;
 
 Vector *make_vector();
@@ -23,3 +26,5 @@ void *vec_head(Vector *vec);
 void *vec_tail(Vector *vec);
 
 int vec_len(Vector *vec);
+
+#endif

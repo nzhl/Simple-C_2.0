@@ -1,14 +1,16 @@
+#include <stdlib.h>
 #include <string.h>
-#include <stype.h>
+#include <ctype.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "buffer.h"
 
-struct struct Buffer{
+struct Buffer{
     char *body;
     int length;
     int nalloc;
-}
+};
 
 #define INIT_SIZE 8
 
@@ -17,6 +19,12 @@ Buffer *make_buffer(){
     buf->body = malloc(INIT_SIZE);
     buf->length = 0;
     buf->nalloc = INIT_SIZE;
+    return buf;
+}
+
+void destroy_buffer(Buffer *buf){
+    free(buf->body);
+    free(buf);
 }
 
 static void extend_buffer(Buffer *buf){
@@ -49,7 +57,7 @@ void buffer_append(Buffer *buf, char *s, int length){
     }
 }
 
-void buffer_printf(Buffer *buf, char *fmt, ...){
+void buffer_append_with_format(Buffer *buf, char *fmt, ...){
     va_list args;
     while(1){
         int length_left = buf->nalloc - buf->length;
@@ -60,7 +68,7 @@ void buffer_printf(Buffer *buf, char *fmt, ...){
             extend_buffer(buf);
             continue;
         }
-        b->length += length_needed;
+        buf->length += length_needed;
         return;
     }
 }
@@ -75,7 +83,7 @@ static char *vformat(char *fmt, va_list param_list){
         // write at most buf->body - 1 chars with a '\0'
         // return value will be the actual needed length
         // so basic we need return value + 1 to save the '\0' as well
-        int length_needed = vsnprintf(buf->body, nalloc, fmt, temp_param_list);
+        int length_needed = vsnprintf(buf->body, buf->nalloc, fmt, temp_param_list);
         if(length_needed >= buf->nalloc){
             while(length_needed >= buf->nalloc){
                 extend_buffer(buf);
@@ -83,16 +91,18 @@ static char *vformat(char *fmt, va_list param_list){
             continue;
         }
         buf->length = length_needed;
-        return buf;
+        char *str = buf->body;
+        free(buf);
+        return str;
     }
 }
 
 char *format(char *fmt, ...){
     va_list ap;
     va_start(ap, fmt);
-    char *buf = vformat(fmt, ap);
+    char *str = vformat(fmt, ap);
     va_end(ap);
-    return buf;
+    return str;
 }
 
 static char *quote(char ch){
@@ -108,39 +118,44 @@ static char *quote(char ch){
     }
 }
 
+
 static void print(Buffer *buf, char ch){
-    char *q = quote(c);
+    char *q = quote(ch);
     if(q){
-        buffer_printf(buf, "%s", q);
+        buffer_append_with_format(buf, "%s", q);
     }
     // ctype.h : isprint : return ch > 0x1f (judge whether its printable)
-    else if(isprint(isprint(ch))){
-        buffer_printf(b, "%c", c);
+    else if(isprint(ch)){
+        buffer_append_with_format(buf, "%c", ch);
     }
     else{
         // hexadecimal
-        buf_printf(b, "\\x%02x", c);
+        buffer_append_with_format(buf, "\\x%02x", ch);
     }
 }
 
 char *quote_cstring(char *str){
     Buffer *buf = make_buffer();
-    while(str){
+    while(*str){
         print(buf, *str++);
     }
-    return buffer_body(buf);
+    char *re = buf->body;
+    free(buf);
+    return re;
 }
 
 char *quote_cstring_length(char *str, int length){
     Buffer *buf = make_buffer();
     for(int i = 0; i < length; ++i){
-        print(b, str[i]);
+        print(buf, str[i]);
     }
-    return buffer_body(buf);
+    char *re = buf->body;
+    free(buf);
+    return re;
 }
 
 char *quote_char(char ch){
     if(ch == '\\') return "\\\\";
     if(ch == '\'') return "\\'";
-    return format("%c", ch)
+    return format("%c", ch);
 }

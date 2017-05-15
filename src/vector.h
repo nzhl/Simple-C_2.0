@@ -1,7 +1,13 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-typedef struct Vector Vector;
+typedef struct{
+    void **body;
+    int len;
+    int nalloc;
+} Vector;
+
+#define EMPTY_VECTOR ((Vector){})
 
 Vector *make_vector();
 

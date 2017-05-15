@@ -6,12 +6,6 @@
 
 #define MIN_SIZE 8
 
-struct Vector {
-    void **body;
-    int len;
-    int nalloc;
-};
-
 static int max(int left, int right){
     return left > right ? left : right;
 }

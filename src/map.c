@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
+
 #include "map.h"
 
 
@@ -31,20 +32,6 @@
 // so could be used as a flag to denote deleted.
 #define DELETED_FLAG ((void *)-1)
 
-
-struct Map{
-    // make the map stackable,
-    // especial useful for symbol table
-    struct Map *parent;
-
-    char **key;
-    void **value;
-    int size;
-
-    // nused = nelem + ndeleted
-    int nelem;
-    int nused;
-};
 
 //FNV-a hash
 static uint32_t hash(char *p){

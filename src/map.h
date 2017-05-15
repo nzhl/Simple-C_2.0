@@ -1,7 +1,21 @@
 #ifndef MAP_H
 #define MAP_H
 
-typedef struct Map Map;
+typedef struct Map{
+    // make the map stackable,
+    // especial useful for symbol table
+    struct Map *parent;
+
+    char **key;
+    void **value;
+    int size;
+
+    // nused = nelem + ndeleted
+    int nelem;
+    int nused;
+}Map;
+
+#define EMPTY_MAP ((Map){})
 
 Map *make_map();
 Map *make_map_parent(Map *parent);

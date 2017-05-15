@@ -1,9 +1,9 @@
 CFLAGS=-Wall -std=gnu11 -g -I. -O0
 
-TESTSRCS=vector.c map.c
+TESTSRCS=vector.c map.c buffer.c
 
-ncc: ncc.o
-	cc -o $@ ncc.o
+ncc: ncc.o error.o
+	cc -o $@ $^
 
 run: ncc
 	./ncc

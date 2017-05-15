@@ -1,3 +1,6 @@
+#ifndef TEST_H
+#define TEST_H
+
 
 void fail_with_msg(char *filename, int line, char *msg);
 void expect_int(char *filename, int line, int expect, int actual);
@@ -9,3 +12,4 @@ void expect_ptr(char *filename, int line, void *expect, void *actual);
 #define expectp(expect, actual) expect_ptr(__FILE__, __LINE__, expect, actual)
 
 
+#endif

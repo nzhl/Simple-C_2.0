@@ -9,6 +9,7 @@
 
 //  project related
 
+#include "error.h"
 
 //---------------------------------------------
 
@@ -22,5 +23,6 @@ int main(int argc, char* argv[]) {
 
     // todo parse option ...
 
-    infile = argv[1];
+    error("123");
+    warning("123");
 }
